@@ -2,10 +2,9 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 3.5" # Adjust as needed
+      version = "~> 3.5"  # Adjust the version as needed
     }
   }
-
   required_version = ">= 0.12"
 }
 
@@ -34,18 +33,18 @@ resource "google_container_cluster" "primary" {
   name     = var.cluster_name
   location = var.region
 
-  # Enable private cluster
+  # Enable private nodes and configure the master authorized networks for Jenkins
   private_cluster_config {
-    enable_private_endpoint = true
-    enable_private_nodes    = true
-    master_ipv4_cidr_block  = "10.0.0.0/28"  # Adjust CIDR block as necessary
+    enable_private_endpoint = false  # Disable private endpoint
+    enable_private_nodes    = true   # Private nodes enabled
+    master_ipv4_cidr_block  = "10.0.0.0/28"  # IP block for master's private IP range
   }
 
-  # Enable master authorized networks with a reserved CIDR block
+  # Allow Jenkins server access to the Kubernetes master endpoint
   master_authorized_networks_config {
     cidr_blocks {
-      cidr_block   = "10.128.0.0/20"  # Example CIDR block from your VPC (adjust as needed)
-      display_name = "Jenkins Network"
+      cidr_block   = "35.192.76.212/32"  # Jenkins public IP address
+      display_name = "Jenkins Server"
     }
   }
 
@@ -57,6 +56,9 @@ resource "google_container_cluster" "primary" {
       "https://www.googleapis.com/auth/cloud-platform",
     ]
   }
+
+  network    = "default"  # Default VPC network; update if using a custom VPC
+  subnetwork = "default"  # Default subnet; update if using a custom subnet
 }
 
 output "kubeconfig" {
@@ -68,4 +70,9 @@ output "cluster_name" {
 }
 
 output "cluster_location" {
-  value = google_container_cluster
+  value = google_container_cluster.primary.location
+}
+
+output "jump_server_ip" {
+  value = "35.192.76.212"  # Output the Jenkins server IP
+}
