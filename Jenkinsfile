@@ -10,6 +10,41 @@ pipeline {
     }
 
     stages {
+        stage('Install Terraform') {
+            steps {
+                script {
+                    // Install Terraform
+                    sh '''
+                        echo "Installing Terraform..."
+                        sudo apt-get update
+                        sudo apt-get install -y wget unzip
+                        wget https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+                        unzip terraform_1.5.0_linux_amd64.zip
+                        sudo mv terraform /usr/local/bin/
+                        terraform -v  # Verify installation
+                    '''
+                }
+            }
+        }
+
+        stage('Checkout Repository') {
+            steps {
+                script {
+                    // Checkout your Terraform code from a repository (e.g., Git)
+                    git 'https://github.com/pranjalmaheshwarii/jenkins-pipelines-.git' // Ensure your branch is set in Jenkins job config
+                }
+            }
+        }
+
+        stage('Debug Workspace') {
+            steps {
+                script {
+                    // List files in the workspace to confirm main.tf is present
+                    sh 'ls -la'
+                }
+            }
+        }
+
         stage('Download Service Account Key') {
             steps {
                 script {
