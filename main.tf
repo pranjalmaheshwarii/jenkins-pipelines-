@@ -36,13 +36,6 @@ resource "google_container_cluster" "primary" {
 
   initial_node_count = 1
 
-  # Configure the private cluster settings
-  private_cluster_config {
-    enable_private_nodes = true
-    enable_private_endpoint = true  # Control plane will be accessed via private IP
-    master_ipv4_cidr_block = "10.8.0.0/28"  # Adjust as needed for your IP range
-  }
-
   node_config {
     machine_type = "e2-medium"  # Adjust based on your needs
     oauth_scopes = [
@@ -62,3 +55,5 @@ output "cluster_name" {
 output "cluster_location" {
   value = google_container_cluster.primary.location
 }
+
+
