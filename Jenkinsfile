@@ -10,13 +10,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout your Terraform code from the specified repository
-                git 'https://github.com/pranjalmaheshwarii/jenkins-pipelines-.git'
-            }
-        }
-
         stage('Download Service Account Key') {
             steps {
                 script {
