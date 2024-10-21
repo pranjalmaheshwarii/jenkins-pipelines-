@@ -34,6 +34,13 @@ resource "google_container_cluster" "primary" {
   name     = var.cluster_name
   location = var.region
 
+  # Enable private cluster
+  private_cluster_config {
+    enable_private_endpoint = true
+    enable_private_nodes    = true
+    master_ipv4_cidr_block  = "10.0.0.0/28"  # Adjust CIDR block as necessary
+  }
+
   initial_node_count = 1
 
   node_config {
@@ -56,4 +63,6 @@ output "cluster_location" {
   value = google_container_cluster.primary.location
 }
 
-
+output "jump_server_ip" {
+  value = "35.192.76.212"  # The IP of the existing VM where Jenkins is configured
+}
