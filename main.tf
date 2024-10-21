@@ -41,6 +41,17 @@ resource "google_container_cluster" "primary" {
     master_ipv4_cidr_block  = "10.0.0.0/28"  # Adjust CIDR block as necessary
   }
 
+  # Enable master authorized networks
+  master_authorized_networks_config {
+    enabled = true
+
+    // Allow access from the Jenkins server's IP
+    cidr_blocks {
+      cidr_block   = "35.192.76.212/32"  # Allow only the Jenkins server IP
+      display_name = "Jenkins Server"
+    }
+  }
+
   initial_node_count = 1
 
   node_config {
