@@ -21,6 +21,14 @@ pipeline {
             }
         }
 
+        stage('List Files') {
+            steps {
+                script {
+                    sh 'ls -la'  // List all files in the current directory
+                }
+            }
+        }
+
         stage('Download Service Account Key') {
             steps {
                 script {
