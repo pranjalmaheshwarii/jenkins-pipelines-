@@ -8,25 +8,37 @@ pipeline {
     }
     
     stages {
-        stage('Install Dependencies') {
+        stage('Install Terraform') {
             steps {
                 script {
-                    // Install Terraform and Google Cloud SDK if needed
+                    // Download and install Terraform
                     sh '''
-                    if ! command -v terraform >/dev/null 2>&1; then
-                      echo "Terraform not found, installing..."
-                      curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-                      sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-                      sudo apt-get update && sudo apt-get install terraform
-                    fi
+                    # Set Terraform version
+                    TERRAFORM_VERSION=1.5.5
+                    
+                    # Download Terraform binary
+                    curl -LO "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+                    
+                    # Unzip and move the binary to /usr/local/bin
+                    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                    mv terraform /usr/local/bin/
+                    chmod +x /usr/local/bin/terraform
 
-                    if ! command -v gcloud >/dev/null 2>&1; then
-                      echo "gcloud CLI not found, installing..."
-                      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-                      sudo apt-get install -y apt-transport-https ca-certificates gnupg
-                      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-                      sudo apt-get update && sudo apt-get install google-cloud-sdk
-                    fi
+                    # Verify Terraform installation
+                    terraform -version
+                    '''
+                }
+            }
+        }
+
+        stage('Install Google Cloud SDK') {
+            steps {
+                script {
+                    // Install Google Cloud SDK
+                    sh '''
+                    curl -sSL https://sdk.cloud.google.com | bash
+                    exec -l $SHELL
+                    gcloud init
                     '''
                 }
             }
