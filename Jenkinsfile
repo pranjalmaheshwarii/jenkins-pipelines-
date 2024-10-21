@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Set the environment variables
         GOOGLE_APPLICATION_CREDENTIALS = 'gs://bucket_2607/tf-k8-key/black-outlet-438804-p8-7ce3a755dbe1.json'
         PROJECT_ID = 'black-outlet-438804-p8'
         CLUSTER_NAME = 'my-cluster'
@@ -10,20 +9,14 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Repository') {
+        stage('Fetch main.tf') {
             steps {
                 script {
-                    // Checkout your Terraform code from a repository (e.g., Git)
-                    git 'https://github.com/pranjalmaheshwarii/jenkins-pipelines-.git'
-                }
-            }
-        }
-
-        stage('Debug Workspace') {
-            steps {
-                script {
-                    // List files in the workspace to confirm main.tf is present
-                    sh 'ls -la'
+                    // Fetch the main.tf file directly from the GitHub repository
+                    sh '''
+                        echo "Fetching main.tf..."
+                        curl -L -o main.tf https://raw.githubusercontent.com/pranjalmaheshwarii/jenkins-pipelines-/main/main.tf
+                    '''
                 }
             }
         }
