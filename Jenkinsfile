@@ -1,114 +1,59 @@
 pipeline {
     agent any
+
     environment {
-        GCLOUD_CREDENTIALS_PATH = 'gs://bucket_2607/tf-k8-key/black-outlet-438804-p8-7ce3a755dbe1.json'
+        // Set the environment variables
+        GOOGLE_APPLICATION_CREDENTIALS = 'gs://bucket_2607/tf-k8-key/black-outlet-438804-p8-7ce3a755dbe1.json'
         PROJECT_ID = 'black-outlet-438804-p8'
-        REGION = 'us-central1-a'
         CLUSTER_NAME = 'my-cluster'
+        REGION = 'us-central1-a'
     }
-    
+
     stages {
-        stage('Install Terraform') {
+        stage('Checkout') {
+            steps {
+                // Checkout your Terraform code from the specified repository
+                git 'https://github.com/pranjalmaheshwarii/jenkins-pipelines-.git'
+            }
+        }
+
+        stage('Download Service Account Key') {
             steps {
                 script {
-                    // Download and install Terraform
-                    sh '''
-                    # Set Terraform version
-                    TERRAFORM_VERSION=1.5.5
-                    
-                    # Download Terraform binary
-                    curl -LO "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-                    
-                    # Unzip and move the binary to /usr/local/bin
-                    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-                    mv terraform /usr/local/bin/
-                    chmod +x /usr/local/bin/terraform
-
-                    # Verify Terraform installation
-                    terraform -version
-                    '''
+                    // Use gsutil to copy the service account key from GCS to the workspace
+                    sh 'gsutil cp gs://bucket_2607/tf-k8-key/black-outlet-438804-p8-7ce3a755dbe1.json ./service-account-key.json'
                 }
             }
         }
 
-        stage('Install Google Cloud SDK') {
-            steps {
-                script {
-                    // Install Google Cloud SDK
-                    sh '''
-                    curl -sSL https://sdk.cloud.google.com | bash
-                    exec -l $SHELL
-                    gcloud init
-                    '''
-                }
-            }
-        }
-        
-        stage('Authenticate with Google Cloud') {
-            steps {
-                script {
-                    // Download the credentials from the GCS bucket and authenticate using Google Cloud SDK
-                    sh '''
-                    gsutil cp ${GCLOUD_CREDENTIALS_PATH} ./gcloud-auth.json
-                    gcloud auth activate-service-account --key-file=gcloud-auth.json
-                    gcloud config set project ${PROJECT_ID}
-                    gcloud config set compute/region ${REGION}
-                    '''
-                }
-            }
-        }
-
-        stage('Terraform Init') {
+        stage('Initialize Terraform') {
             steps {
                 script {
                     // Initialize Terraform
-                    sh '''
-                    terraform init
-                    '''
+                    sh 'terraform init'
                 }
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Plan Terraform') {
             steps {
                 script {
-                    // Run Terraform plan to preview changes
-                    sh '''
-                    terraform plan -out=tfplan
-                    '''
+                    // Set the necessary environment variables for GCP authentication
+                    withEnv(["GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json"]) {
+                        // Plan the Terraform deployment
+                        sh 'terraform plan -var "project_id=${PROJECT_ID}" -var "cluster_name=${CLUSTER_NAME}" -var "region=${REGION}"'
+                    }
                 }
             }
         }
 
-        stage('Terraform Apply') {
+        stage('Apply Terraform') {
             steps {
                 script {
-                    // Apply Terraform changes to create the GKE cluster
-                    sh '''
-                    terraform apply -auto-approve tfplan
-                    '''
-                }
-            }
-        }
-
-        stage('Configure kubectl') {
-            steps {
-                script {
-                    // Get credentials for the newly created Kubernetes cluster
-                    sh '''
-                    gcloud container clusters get-credentials ${CLUSTER_NAME} --zone ${REGION} --project ${PROJECT_ID}
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy Kubernetes Manifests') {
-            steps {
-                script {
-                    // Apply the Kubernetes manifests
-                    sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    '''
+                    // Apply the Terraform plan
+                    withEnv(["GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json"]) {
+                        sh 'terraform apply -auto-approve -var "project_id=${PROJECT_ID}" -var "cluster_name=${CLUSTER_NAME}" -var "region=${REGION}"'
+                    }
                 }
             }
         }
@@ -116,16 +61,8 @@ pipeline {
 
     post {
         always {
-            // Cleanup after the pipeline run
-            sh '''
-            rm -f gcloud-auth.json
-            '''
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Deployment failed.'
+            // Clean up workspace
+            cleanWs()
         }
     }
 }
