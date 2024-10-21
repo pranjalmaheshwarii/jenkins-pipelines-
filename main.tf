@@ -1,4 +1,3 @@
-# main.tf
 terraform {
   required_providers {
     google = {
@@ -11,14 +10,29 @@ terraform {
 }
 
 provider "google" {
-  credentials = file("gs://bucket_2607/tf-k8-key/black-outlet-438804-p8-7ce3a755dbe1.json")  # Path to your new service account key
-  project     = "black-outlet-438804-p8"
-  region      = "us-central1"
+  credentials = file("service-account-key.json")  # Path to your service account key
+  project     = var.project_id
+  region      = var.region
+}
+
+variable "project_id" {
+  description = "The ID of the project in GCP"
+  type        = string
+}
+
+variable "cluster_name" {
+  description = "The name of the Kubernetes cluster"
+  type        = string
+}
+
+variable "region" {
+  description = "The region where the cluster will be created"
+  type        = string
 }
 
 resource "google_container_cluster" "primary" {
-  name     = "my-cluster"
-  location = "us-central1"
+  name     = var.cluster_name
+  location = var.region
 
   initial_node_count = 1
 
@@ -30,7 +44,6 @@ resource "google_container_cluster" "primary" {
   }
 }
 
-# Output the cluster endpoint and credentials
 output "kubeconfig" {
   value = google_container_cluster.primary.endpoint
 }
