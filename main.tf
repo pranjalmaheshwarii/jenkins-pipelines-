@@ -41,11 +41,11 @@ resource "google_container_cluster" "primary" {
     master_ipv4_cidr_block  = "10.0.0.0/28"  # Adjust CIDR block as necessary
   }
 
-  # Enable master authorized networks
+  # Enable master authorized networks with a reserved CIDR block
   master_authorized_networks_config {
     cidr_blocks {
-      cidr_block   = "35.192.76.212/32"  # Allow only the Jenkins server IP
-      display_name = "Jenkins Server"
+      cidr_block   = "10.128.0.0/20"  # Example CIDR block from your VPC (adjust as needed)
+      display_name = "Jenkins Network"
     }
   }
 
@@ -68,9 +68,4 @@ output "cluster_name" {
 }
 
 output "cluster_location" {
-  value = google_container_cluster.primary.location
-}
-
-output "jump_server_ip" {
-  value = "35.192.76.212"  # The IP of the existing VM where Jenkins is configured
-}
+  value = google_container_cluster
