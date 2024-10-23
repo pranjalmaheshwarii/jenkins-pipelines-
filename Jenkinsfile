@@ -9,15 +9,10 @@ pipeline {
     }
 
     stages {
-        stage('Fetch main.tf') {
+        stage('Checkout Code') {
             steps {
-                script {
-                    // Fetch the main.tf file directly from the GitHub repository
-                    sh '''
-                        echo "Fetching main.tf..."
-                        curl -L -o main.tf https://raw.githubusercontent.com/pranjalmaheshwarii/jenkins-pipelines-/main/main.tf
-                    '''
-                }
+                // Clone the Git repository
+                git branch: 'test', url: 'https://github.com/pranjalmaheshwarii/k8s-cluster-deployment.git'
             }
         }
 
